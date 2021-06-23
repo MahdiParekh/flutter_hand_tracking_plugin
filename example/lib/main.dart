@@ -46,15 +46,8 @@ class _MyAppState extends State<MyApp> {
 
   void finishDraw() => setState(() => _points.add(null));
 
-  void _onLandMarkStream(NormalizedLandmarkList landmarkList) {
-    if (landmarkList.landmark != null && landmarkList.landmark.length != 0) {
-      setState(() => _gesture =
-          HandGestureRecognition.handGestureRecognition(landmarkList.landmark));
-      if (_gesture == Gestures.ONE)
-        continueDraw(landmarkList.landmark[8]);
-      else if (_points.length != 0) finishDraw();
-    } else
-      _gesture = null;
+  void _onLandMarkStream(List landmarkList) {
+  print(landmarkList);
   }
 
   getColorList() {
@@ -66,26 +59,28 @@ class _MyAppState extends State<MyApp> {
       onTap: () {
         showDialog(
           context: context,
-          child: AlertDialog(
-            title: const Text('选择颜色'),
-            content: SingleChildScrollView(
-              child: ColorPicker(
-                pickerColor: _pickerColor,
-                onColorChanged: (color) => _pickerColor = color,
+          builder:(BuildContext context){
+            return  AlertDialog(
+              title: const Text('选择颜色'),
+              content: SingleChildScrollView(
+                child: ColorPicker(
+                  pickerColor: _pickerColor,
+                  onColorChanged: (color) => _pickerColor = color,
 //                enableLabel: true,
-                pickerAreaHeightPercent: 0.8,
+                  pickerAreaHeightPercent: 0.8,
+                ),
               ),
-            ),
-            actions: <Widget>[
-              FlatButton(
-                child: const Text('保存'),
-                onPressed: () {
-                  setState(() => _selectedColor = _pickerColor);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
+              actions: <Widget>[
+                FlatButton(
+                  child: const Text('保存'),
+                  onPressed: () {
+                    setState(() => _selectedColor = _pickerColor);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          }
         );
       },
       child: ClipOval(
@@ -130,7 +125,7 @@ class _MyAppState extends State<MyApp> {
         child: Column(
           children: <Widget>[
             Container(
-              height: 300,
+              height: MediaQuery.of(context).size.height,
               child: HandTrackingView(
                 onViewCreated: (HandTrackingViewController c) => setState(() {
                   _controller = c;
@@ -139,102 +134,11 @@ class _MyAppState extends State<MyApp> {
                 }),
               ),
             ),
-            _controller == null
-                ? Text(
-                    "Please grant camera permissions and reopen the application.")
-                : Column(
-                    children: <Widget>[
-                      Text(_gesture == null
-                          ? "No hand landmarks."
-                          : _gesture.toString()),
-                      CustomPaint(
-                        size: Size(_canvasWeight, _canvasHeight),
-                        painter: DrawingPainter(
-                          pointsList: _points,
-                        ),
-                      )
-                    ],
-                  )
+
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(50.0),
-              color: Colors.greenAccent),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.album),
-                      onPressed: () => setState(() {
-                        if (_selectedMode == SelectedMode.StrokeWidth)
-                          _showBottomList = !_showBottomList;
-                        _selectedMode = SelectedMode.StrokeWidth;
-                      }),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.opacity),
-                      onPressed: () => setState(() {
-                        if (_selectedMode == SelectedMode.Opacity)
-                          _showBottomList = !_showBottomList;
-                        _selectedMode = SelectedMode.Opacity;
-                      }),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.color_lens),
-                      onPressed: () => setState(() {
-                        if (_selectedMode == SelectedMode.Color)
-                          _showBottomList = !_showBottomList;
-                        _selectedMode = SelectedMode.Color;
-                      }),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.clear),
-                      onPressed: () => setState(() {
-                        _showBottomList = false;
-                        _points.clear();
-                      }),
-                    ),
-                  ],
-                ),
-                Visibility(
-                  child: (_selectedMode == SelectedMode.Color)
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: getColorList(),
-                        )
-                      : Slider(
-                          value: (_selectedMode == SelectedMode.StrokeWidth)
-                              ? _strokeWidth
-                              : _opacity,
-                          max: (_selectedMode == SelectedMode.StrokeWidth)
-                              ? 50.0
-                              : 1.0,
-                          min: 0.0,
-                          onChanged: (val) {
-                            setState(() {
-                              if (_selectedMode == SelectedMode.StrokeWidth)
-                                _strokeWidth = val;
-                              else
-                                _opacity = val;
-                            });
-                          }),
-                  visible: _showBottomList,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+
     );
   }
 }

@@ -13,6 +13,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.annotation.NonNull
 import com.google.mediapipe.components.*
+import com.google.mediapipe.formats.proto.DetectionProto
 import com.google.mediapipe.formats.proto.LandmarkProto
 import com.google.mediapipe.framework.AndroidAssetUtil
 import com.google.mediapipe.framework.Packet
@@ -36,30 +37,14 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
         private const val BINARY_GRAPH_NAME = "handtrackinggpu.binarypb"
         private const val INPUT_VIDEO_STREAM_NAME = "input_video"
         private const val OUTPUT_VIDEO_STREAM_NAME = "output_video"
-        private const val OUTPUT_HAND_PRESENCE_STREAM_NAME = "hand_presence"
-        private const val OUTPUT_LANDMARKS_STREAM_NAME = "hand_landmarks"
+        private const val OUTPUT_DETECTIONS_STREAM_NAME = "palm_detections"
         private val CAMERA_FACING = CameraHelper.CameraFacing.FRONT
         // Flips the camera-preview frames vertically before sending them into FrameProcessor to be
         // processed in a MediaPipe graph, and flips the processed frames back when they are displayed.
         // This is needed because OpenGL represents images assuming the image origin is at the bottom-left
         // corner, whereas MediaPipe in general assumes the image origin is at top-left.
         private const val FLIP_FRAMES_VERTICALLY = true
-
-        private fun getLandmarksString(landmarks: LandmarkProto.NormalizedLandmarkList): String {
-            var landmarksString = ""
-            for ((landmarkIndex, landmark) in landmarks.landmarkList.withIndex()) {
-                landmarksString += ("\t\tLandmark["
-                        + landmarkIndex
-                        + "]: ("
-                        + landmark.x
-                        + ", "
-                        + landmark.y
-                        + ", "
-                        + landmark.z
-                        + ")\n")
-            }
-            return landmarksString
-        }
+        
 
         @JvmStatic
         fun registerWith(registrar: Registrar) {
@@ -175,7 +160,9 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
                         // display size.
                         converter!!.setSurfaceTextureAndAttachToGLContext(
                                 previewFrameTexture,
+                               // if (isCameraRotated) displaySize.height else displaySize.width,
                                 if (isCameraRotated) displaySize.height else displaySize.width,
+                                //if (isCameraRotated) displaySize.width else displaySize.height)
                                 if (isCameraRotated) displaySize.width else displaySize.height)
                     }
 
@@ -187,36 +174,29 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
 
     private fun setupProcess() {
         processor.videoSurfaceOutput.setFlipY(FLIP_FRAMES_VERTICALLY)
-        processor.addPacketCallback(
-                OUTPUT_HAND_PRESENCE_STREAM_NAME
-        ) { packet: Packet ->
-            val handPresence = PacketGetter.getBool(packet)
-            if (!handPresence)
-//                Toast.makeText(
-//                        activity,
-//                        "[TS: ${packet.timestamp}] No hands detected.",
-//                        Toast.LENGTH_SHORT).show()
-                Log.d(TAG, "[TS:" + packet.timestamp + "] Hand presence is false, no hands detected.")
-        }
-        processor.addPacketCallback(
-                OUTPUT_LANDMARKS_STREAM_NAME
-        ) { packet: Packet ->
-            val landmarksRaw = PacketGetter.getProtoBytes(packet)
-            if (eventSink == null) try {
-                val landmarks = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
-                if (landmarks == null) {
-                    Log.d(TAG, "[TS:" + packet.timestamp + "] No hand landmarks.")
-                    return@addPacketCallback
-                }
-                // Note: If hand_presence is false, these landmarks are useless.
-                Log.d(TAG, "[TS: ${packet.timestamp}] #Landmarks for hand: ${landmarks.landmarkCount}\n ${getLandmarksString(landmarks)}")
-            } catch (e: InvalidProtocolBufferException) {
-                Log.e(TAG, "Couldn't Exception received - $e")
-                return@addPacketCallback
+        processor?.addPacketCallback(
+                OUTPUT_DETECTIONS_STREAM_NAME
+        ){ packet: Packet ->
+            val detections = PacketGetter.getProtoVector(packet,
+                    DetectionProto.Detection.parser())
+            if(detections == null){
+                Log.d("OPFH", "detections null")
             }
-            else uiThreadHandler.post { eventSink?.success(landmarksRaw) }
+            else{
+                //Log.d("OPF", "detections not null 0: ${detections}")
+                val scoreList = ArrayList<Float>()
+                for(detection in detections)
+                {
+                    scoreList.add(detection.scoreList[0])
+
+                }
+
+                uiThreadHandler.post {
+                    eventSink?.success(scoreList)}
+                }
+            }
         }
-    }
+
 
     private fun landMarksStreamHandler(): EventChannel.StreamHandler {
         return object : EventChannel.StreamHandler {

@@ -47,9 +47,11 @@ class HandTrackingViewController {
   Future<String> get platformVersion async =>
       await _methodChannel.invokeMethod("getPlatformVersion");
 
-  Stream<NormalizedLandmarkList> get landMarksStream async* {
+  Stream<List> get landMarksStream async* {
     yield* _eventChannel
         .receiveBroadcastStream()
-        .map((buffer) => NormalizedLandmarkList.fromBuffer(buffer));
+        .map((buffer) => buffer);
+
+
   }
 }
