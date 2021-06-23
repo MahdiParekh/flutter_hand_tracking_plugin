@@ -47,6 +47,9 @@ class HandTrackingViewController {
   Future<String> get platformVersion async =>
       await _methodChannel.invokeMethod("getPlatformVersion");
 
+  Future<bool> get isLoading async =>
+      await _methodChannel.invokeMethod("isLoading");
+
   Stream<List> get landMarksStream async* {
     yield* _eventChannel
         .receiveBroadcastStream()

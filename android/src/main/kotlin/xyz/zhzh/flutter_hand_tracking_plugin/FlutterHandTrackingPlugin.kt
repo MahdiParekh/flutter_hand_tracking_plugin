@@ -84,6 +84,8 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
     // Handles camera access via the {@link CameraX} Jetpack support library.
     private var cameraHelper: CameraXPreviewHelper? = null
 
+    private var isLoading = true;
+
     init {
         r.addRequestPermissionsResultListener(CameraRequestPermissionsListener())
 
@@ -102,7 +104,9 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         if (call.method == "getPlatformVersion") {
             result.success("Android ${android.os.Build.VERSION.RELEASE}")
-        } else {
+        } else if (call.method == "isLoading") {
+            result.success(isLoading)
+        }else{
             result.notImplemented()
         }
     }
@@ -177,6 +181,7 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
         processor?.addPacketCallback(
                 OUTPUT_DETECTIONS_STREAM_NAME
         ){ packet: Packet ->
+            isLoading = false;
             val detections = PacketGetter.getProtoVector(packet,
                     DetectionProto.Detection.parser())
             if(detections == null){

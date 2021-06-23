@@ -46,8 +46,11 @@ class _MyAppState extends State<MyApp> {
 
   void finishDraw() => setState(() => _points.add(null));
 
-  void _onLandMarkStream(List landmarkList) {
+  void _onLandMarkStream(List landmarkList) async {
+    var isLoading;
   print(landmarkList);
+  isLoading = await _controller.isLoading;
+  print(isLoading);
   }
 
   getColorList() {
