@@ -1,6 +1,7 @@
 package xyz.zhzh.flutter_hand_tracking_plugin
 
 import android.app.Activity
+import androidx.camera.core.CameraX
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.SurfaceTexture
 import android.os.Handler
@@ -104,9 +105,15 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         if (call.method == "getPlatformVersion") {
             result.success("Android ${android.os.Build.VERSION.RELEASE}")
-        } else if (call.method == "isLoading") {
+        }
+        else if (call.method == "isLoading") {
             result.success(isLoading)
-        }else{
+        }
+        else if (call.method == "close") {
+            CameraX.unbindAll()
+        }
+        else
+        {
             result.notImplemented()
         }
     }
@@ -218,6 +225,7 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
     }
 
     private fun startCamera() {
+        CameraX.unbindAll()
         cameraHelper = CameraXPreviewHelper()
         cameraHelper!!.setOnCameraStartedListener { surfaceTexture: SurfaceTexture? ->
             previewFrameTexture = surfaceTexture

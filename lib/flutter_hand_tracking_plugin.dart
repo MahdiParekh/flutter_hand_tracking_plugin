@@ -50,6 +50,11 @@ class HandTrackingViewController {
   Future<bool> get isLoading async =>
       await _methodChannel.invokeMethod("isLoading");
 
+  Future<void> close () async
+  {
+   await _methodChannel.invokeMethod("close");
+  }
+
   Stream<List> get landMarksStream async* {
     yield* _eventChannel
         .receiveBroadcastStream()
