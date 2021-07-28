@@ -172,11 +172,10 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
                         converter!!.setSurfaceTextureAndAttachToGLContext(
                                 previewFrameTexture,
                                // if (isCameraRotated) displaySize.height else displaySize.width,
-                               displaySize.height ,
+                               displaySize.height,
                                 //if (isCameraRotated) displaySize.width else displaySize.height)
-                              displaySize.width
+                              displaySize.width )
                     }
-
                     override fun surfaceDestroyed(holder: SurfaceHolder) {
                         processor.videoSurfaceOutput.setSurface(null)
                     }
